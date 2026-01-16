@@ -17,6 +17,8 @@
             font-size: 0.9rem;
             font-weight: bold;
             border: 2px solid #e2e8f0;
+            user-select: none; /* 防止長按選取文字 */
+            -webkit-user-select: none;
         }
         .bingo-cell:hover {
             background-color: #f1f5f9;
@@ -25,6 +27,7 @@
             background-color: #3b82f6 !important;
             color: white;
             border-color: #2563eb;
+            transform: scale(0.95);
         }
         @media (min-width: 768px) {
             .bingo-cell { font-size: 1.1rem; }
@@ -34,42 +37,38 @@
 <body class="bg-gray-100 min-h-screen font-sans">
 
     <div class="max-w-2xl mx-auto px-4 py-8">
-        <!-- 標題區 -->
         <header class="text-center mb-8">
             <h1 class="text-3xl font-bold text-gray-800 mb-2">🛠️ 手工具認識大挑戰</h1>
             <p class="text-gray-600">生活科技課專用賓果卡</p>
             <div class="mt-4 flex justify-center gap-4">
-                <button onclick="generateBoard()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg shadow transition">
+                <button onclick="generateBoard()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg shadow transition active:scale-95">
                     重新洗牌
                 </button>
-                <button onclick="resetMarkers()" class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg shadow transition">
+                <button onclick="resetMarkers()" class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg shadow transition active:scale-95">
                     清除標記
                 </button>
             </div>
         </header>
 
-        <!-- 賓果盤 -->
         <div id="bingo-grid" class="grid grid-cols-5 gap-2 bg-white p-4 rounded-xl shadow-lg border-4 border-gray-200">
-            <!-- 由 JavaScript 動態生成 -->
-        </div>
+            </div>
 
-        <!-- 說明與工具提示 -->
         <div class="mt-8 bg-blue-50 p-6 rounded-xl border border-blue-200">
             <h2 class="text-lg font-bold text-blue-800 mb-2">💡 遊戲規則</h2>
             <ul class="list-disc list-inside text-blue-700 space-y-1">
                 <li>老師展示工具圖片或描述功能。</li>
                 <li>學生找到對應格子點擊變色。</li>
                 <li>連成 2 條線即可喊 BINGO！</li>
+                <li><b>提示：</b>長按或右鍵點擊格子可查看工具說明。</li>
             </ul>
         </div>
     </div>
 
-    <!-- 彈出視窗：工具百科 -->
-    <div id="modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl">
+    <div id="modal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center p-4 z-50" onclick="closeModal()">
+        <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl" onclick="event.stopPropagation()">
             <h3 id="modal-title" class="text-2xl font-bold text-gray-800 mb-2"></h3>
-            <p id="modal-desc" class="text-gray-600 mb-6"></p>
-            <button onclick="closeModal()" class="w-full bg-blue-600 text-white py-2 rounded-lg font-bold">了解！</button>
+            <p id="modal-desc" class="text-gray-600 mb-6 leading-relaxed"></p>
+            <button onclick="closeModal()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg font-bold transition">了解！</button>
         </div>
     </div>
 
@@ -103,26 +102,32 @@
         ];
 
         function shuffle(array) {
-            return array.sort(() => Math.random() - 0.5);
+            let currentIndex = array.length, randomIndex;
+            while (currentIndex != 0) {
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex--;
+                [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+            }
+            return array;
         }
 
         function generateBoard() {
             const grid = document.getElementById('bingo-grid');
             grid.innerHTML = '';
+            // 複製一份陣列再洗牌，避免影響原始資料
             const shuffledTools = shuffle([...tools]);
             
-            shuffledTools.forEach((tool, index) => {
+            shuffledTools.forEach((tool) => {
                 const cell = document.createElement('div');
                 cell.className = 'bingo-cell bg-white rounded-lg shadow-sm p-2';
                 cell.innerText = tool.name;
                 
-                // 點擊變色
+                // 點擊標記功能
                 cell.onclick = (e) => {
-                    e.stopPropagation();
                     cell.classList.toggle('marked');
                 };
 
-                // 長按查看說明 (手機) 或 雙擊 (電腦)
+                // 長按或右鍵查看說明
                 cell.oncontextmenu = (e) => {
                     e.preventDefault();
                     showInfo(tool);
@@ -133,8 +138,10 @@
         }
 
         function resetMarkers() {
-            const cells = document.querySelectorAll('.bingo-cell');
-            cells.forEach(cell => cell.classList.remove('marked'));
+            if(confirm('確定要清除所有標記嗎？')) {
+                const cells = document.querySelectorAll('.bingo-cell');
+                cells.forEach(cell => cell.classList.remove('marked'));
+            }
         }
 
         function showInfo(tool) {
