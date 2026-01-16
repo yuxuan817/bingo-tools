@@ -5,34 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>國中生科：手工具大挑戰 BINGO</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        .bingo-cell {
-            aspect-ratio: 1 / 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-size: 0.9rem;
-            font-weight: bold;
-            border: 2px solid #e2e8f0;
-            user-select: none; /* 防止長按選取文字 */
-            -webkit-user-select: none;
-        }
-        .bingo-cell:hover {
-            background-color: #f1f5f9;
-        }
-        .bingo-cell.marked {
-            background-color: #3b82f6 !important;
-            color: white;
-            border-color: #2563eb;
-            transform: scale(0.95);
-        }
-        @media (min-width: 768px) {
-            .bingo-cell { font-size: 1.1rem; }
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body class="bg-gray-100 min-h-screen font-sans">
 
@@ -41,12 +14,8 @@
             <h1 class="text-3xl font-bold text-gray-800 mb-2">🛠️ 手工具認識大挑戰</h1>
             <p class="text-gray-600">生活科技課專用賓果卡</p>
             <div class="mt-4 flex justify-center gap-4">
-                <button onclick="generateBoard()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg shadow transition active:scale-95">
-                    重新洗牌
-                </button>
-                <button onclick="resetMarkers()" class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg shadow transition active:scale-95">
-                    清除標記
-                </button>
+                <button onclick="generateBoard()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg shadow transition active:scale-95">重新洗牌</button>
+                <button onclick="resetMarkers()" class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg shadow transition active:scale-95">清除標記</button>
             </div>
         </header>
 
@@ -59,7 +28,7 @@
                 <li>老師展示工具圖片或描述功能。</li>
                 <li>學生找到對應格子點擊變色。</li>
                 <li>連成 2 條線即可喊 BINGO！</li>
-                <li><b>提示：</b>長按或右鍵點擊格子可查看工具說明。</li>
+                <li><b>提示：</b>長按或右鍵可查看工具百科。</li>
             </ul>
         </div>
     </div>
@@ -68,94 +37,10 @@
         <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl" onclick="event.stopPropagation()">
             <h3 id="modal-title" class="text-2xl font-bold text-gray-800 mb-2"></h3>
             <p id="modal-desc" class="text-gray-600 mb-6 leading-relaxed"></p>
-            <button onclick="closeModal()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg font-bold transition">了解！</button>
+            <button onclick="closeModal()" class="w-full bg-blue-600 text-white py-2 rounded-lg font-bold">了解！</button>
         </div>
     </div>
 
-    <script>
-        const tools = [
-            { name: "鋼捲尺", desc: "測量長距離使用，注意回收時片刃割傷。" },
-            { name: "直角尺", desc: "檢查垂直度或劃出 90 度垂直線。" },
-            { name: "游標卡尺", desc: "測量物體外徑、內徑或深度，精密度極高。" },
-            { name: "劃線針", desc: "在金屬或木材表面刻劃出基準線。" },
-            { name: "中心衝", desc: "鑽孔前的標記，防止鑽頭滑走。" },
-            { name: "手鋸", desc: "直線切斷木材，切記推拉要有節奏。" },
-            { name: "線鋸", desc: "適合切割複雜的曲線或小半徑圓形。" },
-            { name: "美工刀", desc: "切割薄板或紙張，刀片不可伸出太長。" },
-            { name: "鑿刀", desc: "挖掘凹槽，嚴禁對著身體或他人使用。" },
-            { name: "銼刀", desc: "修飾表面毛邊，不可當槓桿使用。" },
-            { name: "羊角鎚", desc: "敲擊釘子，另一頭可用來拔釘。" },
-            { name: "木槌", desc: "敲擊木工組件或鑿刀柄，不傷表面。" },
-            { name: "十字起子", desc: "鎖固十字頭螺絲，需選取適合大小。" },
-            { name: "一字起子", desc: "鎖固一字頭螺絲，不可當鑿刀使用。" },
-            { name: "活動扳手", desc: "可調整開口大小，旋轉六角螺帽。" },
-            { name: "尖嘴鉗", desc: "剪斷細線或夾取細小零件。" },
-            { name: "手搖鑽", desc: "手動動力鑽孔，適合薄板。" },
-            { name: "砂紙", desc: "研磨表面，係數越大(如#400)越細。" },
-            { name: "G字夾", desc: "固定工件於工作檯上，防止晃動。" },
-            { name: "木工鉛筆", desc: "筆芯扁平，適合在木材粗糙面標記。" },
-            { name: "尖錐", desc: "在木板上鑽小孔，方便螺絲進入。" },
-            { name: "鋼直尺", desc: "測量長度或作為劃線導引。" },
-            { name: "美式木工夾", desc: "快速固定木料，組裝家具好幫手。" },
-            { name: "虎鉗", desc: "安裝於工作桌上，強力夾持工件。" },
-            { name: "護目鏡", desc: "最重要的防護具，防止屑料入眼。" }
-        ];
-
-        function shuffle(array) {
-            let currentIndex = array.length, randomIndex;
-            while (currentIndex != 0) {
-                randomIndex = Math.floor(Math.random() * currentIndex);
-                currentIndex--;
-                [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
-            }
-            return array;
-        }
-
-        function generateBoard() {
-            const grid = document.getElementById('bingo-grid');
-            grid.innerHTML = '';
-            // 複製一份陣列再洗牌，避免影響原始資料
-            const shuffledTools = shuffle([...tools]);
-            
-            shuffledTools.forEach((tool) => {
-                const cell = document.createElement('div');
-                cell.className = 'bingo-cell bg-white rounded-lg shadow-sm p-2';
-                cell.innerText = tool.name;
-                
-                // 點擊標記功能
-                cell.onclick = (e) => {
-                    cell.classList.toggle('marked');
-                };
-
-                // 長按或右鍵查看說明
-                cell.oncontextmenu = (e) => {
-                    e.preventDefault();
-                    showInfo(tool);
-                };
-
-                grid.appendChild(cell);
-            });
-        }
-
-        function resetMarkers() {
-            if(confirm('確定要清除所有標記嗎？')) {
-                const cells = document.querySelectorAll('.bingo-cell');
-                cells.forEach(cell => cell.classList.remove('marked'));
-            }
-        }
-
-        function showInfo(tool) {
-            document.getElementById('modal-title').innerText = tool.name;
-            document.getElementById('modal-desc').innerText = tool.desc;
-            document.getElementById('modal').classList.remove('hidden');
-        }
-
-        function closeModal() {
-            document.getElementById('modal').classList.add('hidden');
-        }
-
-        // 初始化
-        window.onload = generateBoard;
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>
