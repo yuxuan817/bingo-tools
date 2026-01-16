@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>國中生科：手工具大挑戰 BINGO</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .bingo-cell {
+            aspect-ratio: 1 / 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+            font-weight: bold;
+            border: 2px solid #e2e8f0;
+        }
+        .bingo-cell:hover {
+            background-color: #f1f5f9;
+        }
+        .bingo-cell.marked {
+            background-color: #3b82f6 !important;
+            color: white;
+            border-color: #2563eb;
+        }
+        @media (min-width: 768px) {
+            .bingo-cell { font-size: 1.1rem; }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen font-sans">
+
+    <div class="max-w-2xl mx-auto px-4 py-8">
+        <!-- 標題區 -->
+        <header class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">🛠️ 手工具認識大挑戰</h1>
+            <p class="text-gray-600">生活科技課專用賓果卡</p>
+            <div class="mt-4 flex justify-center gap-4">
+                <button onclick="generateBoard()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg shadow transition">
+                    重新洗牌
+                </button>
+                <button onclick="resetMarkers()" class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg shadow transition">
+                    清除標記
+                </button>
+            </div>
+        </header>
+
+        <!-- 賓果盤 -->
+        <div id="bingo-grid" class="grid grid-cols-5 gap-2 bg-white p-4 rounded-xl shadow-lg border-4 border-gray-200">
+            <!-- 由 JavaScript 動態生成 -->
+        </div>
+
+        <!-- 說明與工具提示 -->
+        <div class="mt-8 bg-blue-50 p-6 rounded-xl border border-blue-200">
+            <h2 class="text-lg font-bold text-blue-800 mb-2">💡 遊戲規則</h2>
+            <ul class="list-disc list-inside text-blue-700 space-y-1">
+                <li>老師展示工具圖片或描述功能。</li>
+                <li>學生找到對應格子點擊變色。</li>
+                <li>連成 2 條線即可喊 BINGO！</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- 彈出視窗：工具百科 -->
+    <div id="modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl">
+            <h3 id="modal-title" class="text-2xl font-bold text-gray-800 mb-2"></h3>
+            <p id="modal-desc" class="text-gray-600 mb-6"></p>
+            <button onclick="closeModal()" class="w-full bg-blue-600 text-white py-2 rounded-lg font-bold">了解！</button>
+        </div>
+    </div>
+
+    <script>
+        const tools = [
+            { name: "鋼捲尺", desc: "測量長距離使用，注意回收時片刃割傷。" },
+            { name: "直角尺", desc: "檢查垂直度或劃出 90 度垂直線。" },
+            { name: "游標卡尺", desc: "測量物體外徑、內徑或深度，精密度極高。" },
+            { name: "劃線針", desc: "在金屬或木材表面刻劃出基準線。" },
+            { name: "中心衝", desc: "鑽孔前的標記，防止鑽頭滑走。" },
+            { name: "手鋸", desc: "直線切斷木材，切記推拉要有節奏。" },
+            { name: "線鋸", desc: "適合切割複雜的曲線或小半徑圓形。" },
+            { name: "美工刀", desc: "切割薄板或紙張，刀片不可伸出太長。" },
+            { name: "鑿刀", desc: "挖掘凹槽，嚴禁對著身體或他人使用。" },
+            { name: "銼刀", desc: "修飾表面毛邊，不可當槓桿使用。" },
+            { name: "羊角鎚", desc: "敲擊釘子，另一頭可用來拔釘。" },
+            { name: "木槌", desc: "敲擊木工組件或鑿刀柄，不傷表面。" },
+            { name: "十字起子", desc: "鎖固十字頭螺絲，需選取適合大小。" },
+            { name: "一字起子", desc: "鎖固一字頭螺絲，不可當鑿刀使用。" },
+            { name: "活動扳手", desc: "可調整開口大小，旋轉六角螺帽。" },
+            { name: "尖嘴鉗", desc: "剪斷細線或夾取細小零件。" },
+            { name: "手搖鑽", desc: "手動動力鑽孔，適合薄板。" },
+            { name: "砂紙", desc: "研磨表面，係數越大(如#400)越細。" },
+            { name: "G字夾", desc: "固定工件於工作檯上，防止晃動。" },
+            { name: "木工鉛筆", desc: "筆芯扁平，適合在木材粗糙面標記。" },
+            { name: "尖錐", desc: "在木板上鑽小孔，方便螺絲進入。" },
+            { name: "鋼直尺", desc: "測量長度或作為劃線導引。" },
+            { name: "美式木工夾", desc: "快速固定木料，組裝家具好幫手。" },
+            { name: "虎鉗", desc: "安裝於工作桌上，強力夾持工件。" },
+            { name: "護目鏡", desc: "最重要的防護具，防止屑料入眼。" }
+        ];
+
+        function shuffle(array) {
+            return array.sort(() => Math.random() - 0.5);
+        }
+
+        function generateBoard() {
+            const grid = document.getElementById('bingo-grid');
+            grid.innerHTML = '';
+            const shuffledTools = shuffle([...tools]);
+            
+            shuffledTools.forEach((tool, index) => {
+                const cell = document.createElement('div');
+                cell.className = 'bingo-cell bg-white rounded-lg shadow-sm p-2';
+                cell.innerText = tool.name;
+                
+                // 點擊變色
+                cell.onclick = (e) => {
+                    e.stopPropagation();
+                    cell.classList.toggle('marked');
+                };
+
+                // 長按查看說明 (手機) 或 雙擊 (電腦)
+                cell.oncontextmenu = (e) => {
+                    e.preventDefault();
+                    showInfo(tool);
+                };
+
+                grid.appendChild(cell);
+            });
+        }
+
+        function resetMarkers() {
+            const cells = document.querySelectorAll('.bingo-cell');
+            cells.forEach(cell => cell.classList.remove('marked'));
+        }
+
+        function showInfo(tool) {
+            document.getElementById('modal-title').innerText = tool.name;
+            document.getElementById('modal-desc').innerText = tool.desc;
+            document.getElementById('modal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.add('hidden');
+        }
+
+        // 初始化
+        window.onload = generateBoard;
+    </script>
+</body>
+</html>
